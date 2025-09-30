@@ -8,17 +8,14 @@ DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
+    "django.contrib.admin","django.contrib.auth","django.contrib.contenttypes",
+    "django.contrib.sessions","django.contrib.messages","django.contrib.staticfiles",
     "users",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # <-- добавили
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -31,11 +28,10 @@ ROOT_URLCONF = "webadmin.urls"
 WSGI_APPLICATION = "webadmin.wsgi.application"
 ASGI_APPLICATION = "webadmin.asgi.application"
 
-# ✅ ВАЖНО: этот блок нужен для admin
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],   # можно оставить пустым списком
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -66,6 +62,13 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth:8000")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# На будущее для сервера (порт/хост) можно так:
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:33333",
+    "http://192.168.1.15:33333",
+]

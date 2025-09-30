@@ -5,3 +5,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("users.urls")),
 ]
+
+admin.site.site_header = "VT Administrator"
+admin.site.site_title = "VT Admin"
+admin.site.index_title = "VT User Management"
