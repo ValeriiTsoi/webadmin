@@ -1,0 +1,55 @@
+name: CI-CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ValeriiTsoi --password-stdin
+
+      - name: Build backend
+        run: |
+          docker build -f backend/Dockerfile -t ghcr.io/valeriitsoi/webadmin-backend:${{ github.sha }} .
+          docker tag ghcr.io/valeriitsoi/webadmin-backend:${{ github.sha }} ghcr.io/valeriitsoi/webadmin-backend:main
+          docker push ghcr.io/valeriitsoi/webadmin-backend:${{ github.sha }}
+          docker push ghcr.io/valeriitsoi/webadmin-backend:main
+
+      - name: Build auth
+        run: |
+          docker build -f auth_service/Dockerfile -t ghcr.io/valeriitsoi/webadmin-auth:${{ github.sha }} .
+          docker tag ghcr.io/valeriitsoi/webadmin-auth:${{ github.sha }} ghcr.io/valeriitsoi/webadmin-auth:main
+          docker push ghcr.io/valeriitsoi/webadmin-auth:${{ github.sha }}
+          docker push ghcr.io/valeriitsoi/webadmin-auth:main
+
+  deploy:
+    needs: [build-push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy via SSH
+        env:
+          SERVER_REPO_DIR: ${{ secrets.SERVER_REPO_DIR }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+            set -e
+            cd ${SERVER_REPO_DIR:-/opt/webadmin}
+            git pull --rebase
+            cd terraform
+            terraform init -input=false
+            terraform apply -auto-approve \
+              -var="webadmin_image=ghcr.io/valeriitsoi/webadmin-backend:main" \
+              -var="auth_image=ghcr.io/valeriitsoi/webadmin-auth:main"
+          '

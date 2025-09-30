@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: webadmin-migrate
+  namespace: webadmin
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 6 }}
+      containers:
+        - name: migrate
+          image: {{ .Values.webadmin.image | quote }}
+          env:
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.webadmin.env.DJANGO_SECRET_SECRET }}
+                  key: {{ .Values.webadmin.env.DJANGO_SECRET_KEY }}
+            - name: POSTGRES_DB
+              value: {{ .Values.webadmin.env.POSTGRES_DB | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.webadmin.env.POSTGRES_USER | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.webadmin.env.POSTGRES_PASSWORD_SECRET }}
+                  key: {{ .Values.webadmin.env.POSTGRES_PASSWORD_KEY }}
+            - name: POSTGRES_HOST
+              value: "postgres"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: AUTH_SERVICE_URL
+              value: "http://auth:8000"
+          command: ["python","manage.py","migrate"]

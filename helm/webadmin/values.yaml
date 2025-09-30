@@ -1,0 +1,28 @@
+imagePullSecrets:
+  - name: ghcr-cred
+
+postgres:
+  image: postgres:16
+  db: webadmin
+  user: webadmin
+  passwordSecretName: app-secrets
+  passwordSecretKey: POSTGRES_PASSWORD
+  storageSize: 1Gi
+
+auth:
+  image: ghcr.io/valeriitsoi/webadmin-auth:latest
+  nodePort: 33334
+  env:
+    AUTH_SECRET_SECRET: app-secrets
+    AUTH_SECRET_KEY: AUTH_SECRET
+
+webadmin:
+  image: ghcr.io/valeriitsoi/webadmin-backend:latest
+  nodePort: 33333
+  env:
+    DJANGO_SECRET_SECRET: app-secrets
+    DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+    POSTGRES_DB: webadmin
+    POSTGRES_USER: webadmin
+    POSTGRES_PASSWORD_SECRET: app-secrets
+    POSTGRES_PASSWORD_KEY: POSTGRES_PASSWORD
